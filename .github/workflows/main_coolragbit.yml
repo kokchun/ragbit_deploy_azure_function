@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 env:
-  AZURE_FUNCTIONAPP_NAME: chtnewsletter-app
+  AZURE_FUNCTIONAPP_NAME: coolragbit
   AZURE_FUNCTIONAPP_PROJECT_PATH: .
   PYTHON_VERSION: '3.12'
   DEPLOYMENT_SLOT: staging
@@ -18,10 +18,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
