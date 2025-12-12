@@ -38,8 +38,12 @@ jobs:
         with:
           name: python-app
           path: |
-            . 
-            !venv/
+            api.py
+            function_app.py
+            requirements.txt
+            host.json
+            backend
+
   deploy:
     runs-on: ubuntu-latest
     needs: build
@@ -51,7 +55,7 @@ jobs:
       - name: Download artifact from build job
         uses: actions/download-artifact@v4
         with:
-          name: python-app
+          name: cool_ragbit
           path: .
 
       - name: 'Deploy to Azure Functions'
@@ -62,5 +66,3 @@ jobs:
           slot-name: 'Production'
           package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_3BB308DB368F4B4D92FE9C264B5B250F }}
-          scm-do-build-during-deployment: true
-          enable-oryx-build: true
