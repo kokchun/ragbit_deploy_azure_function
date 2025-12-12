@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from backend.rag import rag_agent
 from backend.data_models import Prompt
 
-app = FastAPI()
+app = FastAPI() 
 
 @app.get("/")
 async def hello_message():
