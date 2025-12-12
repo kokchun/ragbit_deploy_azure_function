@@ -1,74 +1,69 @@
-name: Deploy Azure Function
-
+name: Build and deploy Python project to Azure Function App
 on:
   push:
     branches:
       - main
-  workflow_dispatch:
-
+ workflow_dispatch:
 env:
-  AZURE_FUNCTIONAPP_NAME: coolragbit
-  AZURE_FUNCTIONAPP_PROJECT_PATH: .
-  PYTHON_VERSION: '3.12'
-  DEPLOYMENT_SLOT: staging
+  AZURE_FUNCTIONAPP_PACKAGE_PATH: "." 
+  PYTHON_VERSION: "3.13"
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write   # Required for OIDC
-      contents: read    # Required for actions/checkout
+  runs-on: ubuntu-latest
+  permissions:
+    contents: read
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
+  steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
+    - name: Install uv
+      uses: astral-sh/setup-uv@v5
+      with:
+        enable-cache: true
+        cache-dependency-glob: "requirements.txt"
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          if [ -f requirements.txt ]; then pip install -r requirements.txt --target=".python_packages/lib/site-packages"; fi
+    - name: Setup Python version # GitHub caches the Python versions
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: Upload artifact for deployment
-        uses: actions/upload-artifact@v4
-        with:
-          name: python-app
-          path: |
-            .
-            !.git
-            !.github
+    - name: Install dependencies
+      run: |
+        mkdir -p .python_packages/lib/site-packages
+        uv pip install - target=".python_packages/lib/site-packages" -r requirements.txt
 
-  deploy:
-    runs-on: ubuntu-latest
-    needs: build
-    permissions:
-      id-token: write   # Required for OIDC
-      contents: read    # Required for actions/checkout
+    - name: Zip artifact for deployment
+      run: |
+        zip -r release.zip . -x "*.md" local.settings.json "__*" ".*"
+        zip -r release.zip .python_packages
 
-    steps:
-      - name: Download artifact from build job
-        uses: actions/download-artifact@v4
-        with:
-          name: python-app
-          path: .
+    - name: Upload artifact for deployment job
+      uses: actions/upload-artifact@v4
+      with:
+        name: python-app
+        path: release.zip
 
-      - name: Log in to Azure with OIDC
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+deploy:
+  runs-on: ubuntu-latest
+  needs: build
+  
+  steps:
+    - name: Download artifact from build job
+      uses: actions/download-artifact@v4
+      with:
+        name: python-app
 
-      - name: Deploy to Azure Function App (Staging Slot)
-        uses: Azure/functions-action@v1.5.3
-        id: deploy-to-function-app
-        with:
-          app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
-          slot-name: ${{ env.DEPLOYMENT_SLOT }}
-          package: '${{ env.AZURE_FUNCTIONAPP_PROJECT_PATH }}'
-          scm-do-build-during-deployment: true
-          enable-oryx-build: true
+    - name: Unzip artifact for deployment
+      run: unzip release.zip
+
+    - name: "Deploy to Azure Functions"
+      uses: Azure/functions-action@v1
+      id: deploy-to-function
+      with:
+        app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
+        slot-name: "Production"
+        package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
+        publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_3BB308DB368F4B4D92FE9C264B5B250F }}
+        sku: "flexconsumption"
