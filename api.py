@@ -6,7 +6,7 @@ app = FastAPI()
 
 @app.get("/")
 async def hello_message():
-    return {"test": "hello"}
+    return {"test": "hello there"}
 
 @app.post("/rag/query")
 async def query_documentation(query: Prompt):
