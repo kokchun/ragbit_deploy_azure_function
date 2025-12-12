@@ -1,0 +1,18 @@
+[project]
+name = "pydanticai-rag"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "azure-functions>=1.24.0",
+    "fastapi>=0.122.1",
+    "google-generativeai>=0.8.5",
+    "ipykernel>=7.1.0",
+    "lancedb>=0.25.3",
+    "pandas>=2.3.3",
+    "pydantic-ai>=1.25.1",
+    "pypdf>=6.4.0",
+    "streamlit>=1.51.0",
+    "uvicorn>=0.38.0",
+]
